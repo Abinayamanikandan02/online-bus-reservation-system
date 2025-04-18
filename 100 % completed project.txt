@@ -1,0 +1,284 @@
+100 % completed project
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
+
+class Bus {
+    int busId;
+    String busName;
+    String source;
+    String destination;
+    int totalSeats;
+    double price;
+    boolean[] bookedSeats;
+
+    public Bus(int busId, String busName, String source, String destination, int totalSeats, double price) {
+        this.busId = busId;
+        this.busName = busName;
+        this.source = source;
+        this.destination = destination;
+        this.totalSeats = totalSeats;
+        this.price = price;
+        this.bookedSeats = new boolean[totalSeats];
+    }
+
+    public void displayBusDetails() {
+        int seatsAvailable = 0;
+        for (boolean seat : bookedSeats) {
+            if (!seat) seatsAvailable++;
+        }
+        System.out.println("Bus ID: " + busId + " | Name: " + busName +
+                " | Route: " + source + " -> " + destination +
+                " | Seats Available: " + seatsAvailable +
+                " | Price: ₹" + price);
+    }
+
+    public boolean bookSeat(int seatNumber) {
+        if (seatNumber >= 1 && seatNumber <= totalSeats && !bookedSeats[seatNumber - 1]) {
+            bookedSeats[seatNumber - 1] = true;
+            return true;
+        }
+        return false;
+    }
+
+    public void cancelSeat(int seatNumber) {
+        if (seatNumber >= 1 && seatNumber <= totalSeats && bookedSeats[seatNumber - 1]) {
+            bookedSeats[seatNumber - 1] = false;
+        }
+    }
+
+    public boolean[] getAvailableSeats() {
+        boolean[] availableSeats = new boolean[totalSeats];
+        for (int i = 0; i < totalSeats; i++) {
+            availableSeats[i] = !bookedSeats[i];
+        }
+        return availableSeats;
+    }
+}
+
+class Booking {
+    String bookingId;
+    String name;
+    int age;
+    String gender;
+    Bus bus;
+    int[] seats;
+    double amount;
+
+    public Booking(String bookingId, String name, int age, String gender, Bus bus, int[] seats, double amount) {
+        this.bookingId = bookingId;
+        this.name = name;
+        this.age = age;
+        this.gender = gender;
+        this.bus = bus;
+        this.seats = seats;
+        this.amount = amount;
+    }
+
+    public void printBookingDetails() {
+        System.out.println("\n🧾 Booking ID: " + bookingId);
+        System.out.println("👤 Name: " + name + " | Age: " + age + " | Gender: " + gender);
+        System.out.println("🚌 Bus: " + bus.busName + " | Route: " + bus.source + " -> " + bus.destination);
+        System.out.println("🪑 Seats: " + Arrays.toString(seats));
+        System.out.println("💰 Amount Paid: ₹" + amount);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        List<Booking> allBookings = new ArrayList<>();
+
+        System.out.print("How many buses do you want to add? ");
+        int numberOfBuses = scanner.nextInt();
+        scanner.nextLine();
+
+        Bus[] buses = new Bus[numberOfBuses];
+
+        for (int i = 0; i < numberOfBuses; i++) {
+            System.out.println("\nEnter details for Bus " + (i + 1));
+            System.out.print("Bus Name: ");
+            String busName = scanner.nextLine();
+            System.out.print("Source: ");
+            String source = scanner.nextLine();
+            System.out.print("Destination: ");
+            String destination = scanner.nextLine();
+            System.out.print("Total Seats: ");
+            int seats = scanner.nextInt();
+            System.out.print("Ticket Price: ₹");
+            double price = scanner.nextDouble();
+            scanner.nextLine();
+            buses[i] = new Bus(i + 1, busName, source, destination, seats, price);
+        }
+
+        System.out.println("\n🚌 Welcome to Online Bus Reservation System");
+
+        System.out.print("How many passengers are making a reservation? ");
+        int numberOfPassengers = scanner.nextInt();
+        scanner.nextLine();
+
+        for (int p = 0; p < numberOfPassengers; p++) {
+            System.out.println("\nEnter details for Passenger " + (p + 1));
+            System.out.print("Name: ");
+            String name = scanner.nextLine();
+            System.out.print("Age: ");
+            int age = scanner.nextInt();
+            scanner.nextLine();
+            System.out.print("Gender: ");
+            String gender = scanner.nextLine();
+
+            System.out.println("\nAvailable Buses:");
+            for (int i = 0; i < numberOfBuses; i++) {
+                buses[i].displayBusDetails();
+            }
+
+            System.out.print("\nEnter Bus ID to Book: ");
+            int busId = scanner.nextInt();
+            scanner.nextLine();
+
+            if (busId < 1 || busId > numberOfBuses) {
+                System.out.println("❌ Invalid Bus ID. Skipping passenger.");
+                continue;
+            }
+
+            Bus selectedBus = buses[busId - 1];
+
+            // Show available seats
+            boolean[] availableSeats = selectedBus.getAvailableSeats();
+            System.out.println("\nAvailable Seats: ");
+            for (int i = 0; i < availableSeats.length; i++) {
+                if (availableSeats[i]) System.out.print((i + 1) + " ");
+            }
+
+            // Ask how many seats to book
+            System.out.print("\nHow many seats do you want to book? ");
+            int seatCount = scanner.nextInt();
+            scanner.nextLine();
+            int[] selectedSeats = new int[seatCount];
+
+            for (int i = 0; i < seatCount; ) {
+                System.out.print("Enter seat number: ");
+                int seat = scanner.nextInt();
+                scanner.nextLine();
+                if (selectedBus.bookSeat(seat)) {
+                    selectedSeats[i] = seat;
+                    i++;
+                } else {
+                    System.out.println("❌ Seat " + seat + " is already booked or invalid.");
+                }
+            }
+
+            String bookingId = "BK" + new Random().nextInt(10000);
+            double total = seatCount * selectedBus.price;
+
+            Booking booking = new Booking(bookingId, name, age, gender, selectedBus, selectedSeats, total);
+            allBookings.add(booking);
+            booking.printBookingDetails();
+
+            try (FileWriter writer = new FileWriter("bookings.txt", true)) {
+                writer.write("Booking ID: " + bookingId + "\n");
+                writer.write("Name: " + name + ", Age: " + age + ", Gender: " + gender + "\n");
+                writer.write("Bus: " + selectedBus.busName + ", Route: " + selectedBus.source + " -> " + selectedBus.destination + "\n");
+                writer.write("Seats: " + Arrays.toString(selectedSeats) + ", Total: ₹" + total + "\n");
+                writer.write("--------------------------------------------------\n");
+            } catch (IOException e) {
+                System.out.println("⚠️ Error saving booking to file: " + e.getMessage());
+            }
+
+            // Ask if they want to cancel this booking
+            System.out.print("Do you want to cancel this booking? (yes/no): ");
+            String cancel = scanner.nextLine();
+            if (cancel.equalsIgnoreCase("yes")) {
+                for (int seat : selectedSeats) {
+                    selectedBus.cancelSeat(seat);
+                }
+                allBookings.remove(booking);
+                System.out.println("❌ Booking " + bookingId + " cancelled.");
+            }
+        }
+
+        // Show all confirmed bookings
+        System.out.println("\n🧾 All Confirmed Bookings:");
+        for (Booking b : allBookings) {
+            b.printBookingDetails();
+        }
+
+        scanner.close();
+    }
+}
+----------
+Sample output:
+
+How many buses do you want to add? 1
+
+Enter details for Bus 1
+Bus Name: Express 
+Source: chennai
+Destination: theni
+Total Seats: 10
+Ticket Price: ₹500
+
+🚌 Welcome to Online Bus Reservation System
+How many passengers are making a reservation? 2
+
+Enter details for Passenger 1
+Name: shyamala
+Age: 24
+Gender: female
+
+Available Buses:
+Bus ID: 1 | Name: Express  | Route: chennai -> theni | Seats Available: 10 | Price: ₹500.0
+
+Enter Bus ID to Book: 1
+
+Available Seats: 
+1 2 3 4 5 6 7 8 9 10 
+How many seats do you want to book? 2
+Enter seat number: 5
+Enter seat number: 6
+
+🧾 Booking ID: BK9328
+👤 Name: shyamala | Age: 24 | Gender: female
+🚌 Bus: Express  | Route: chennai -> theni
+🪑 Seats: [5, 6]
+💰 Amount Paid: ₹1000.0
+Do you want to cancel this booking? (yes/no): no
+
+Enter details for Passenger 2
+Name: prabha
+Age: 23
+Gender: female
+
+Available Buses:
+Bus ID: 1 | Name: Express  | Route: chennai -> theni | Seats Available: 8 | Price: ₹500.0
+
+Enter Bus ID to Book: 1
+
+Available Seats: 
+1 2 3 4 7 8 9 10 
+How many seats do you want to book? 1
+Enter seat number: 6
+❌ Seat 6 is already booked or invalid.
+Enter seat number: 4
+
+🧾 Booking ID: BK6000
+👤 Name: prabha | Age: 23 | Gender: female
+🚌 Bus: Express  | Route: chennai -> theni
+🪑 Seats: [4]
+💰 Amount Paid: ₹500.0
+Do you want to cancel this booking? (yes/no): no
+
+🧾 All Confirmed Bookings:
+
+🧾 Booking ID: BK9328
+👤 Name: shyamala | Age: 24 | Gender: female
+🚌 Bus: Express  | Route: chennai -> theni
+🪑 Seats: [5, 6]
+💰 Amount Paid: ₹1000.0
+
+🧾 Booking ID: BK6000
+👤 Name: prabha | Age: 23 | Gender: female
+🚌 Bus: Express  | Route: chennai -> theni
+🪑 Seats: [4]
+💰 Amount Paid: ₹500.0
